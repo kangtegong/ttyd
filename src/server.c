@@ -51,7 +51,8 @@ static lws_retry_bo_t retry = {
 #endif
 
 // command line options
-static const struct option options[] = {{"port", required_argument, NULL, 'p'},
+static const struct option options[] = 	{{"name", required_argument, NULL, 'n'},
+					{"port", required_argument, NULL, 'p'},
                                         {"interface", required_argument, NULL, 'i'},
                                         {"credential", required_argument, NULL, 'c'},
                                         {"auth-header", required_argument, NULL, 'H'},
@@ -81,7 +82,7 @@ static const struct option options[] = {{"port", required_argument, NULL, 'p'},
                                         {"version", no_argument, NULL, 'v'},
                                         {"help", no_argument, NULL, 'h'},
                                         {NULL, 0, 0, 0}};
-static const char *opt_string = "p:i:c:H:u:g:s:w:I:b:P:6aSC:K:A:Rt:T:Om:oBd:vh";
+static const char *opt_string = "n:p:i:c:H:u:g:s:w:I:b:P:6aSC:K:A:Rt:T:Om:oBd:vh";
 
 static void print_help() {
   // clang-format off
@@ -328,6 +329,8 @@ int main(int argc, char **argv) {
   char cert_path[1024] = "";
   char key_path[1024] = "";
   char ca_path[1024] = "";
+  char djangouser[1024] = "";
+  char portnumber[1024] = "";
 
   struct json_object *client_prefs = json_object_new_object();
 
@@ -373,6 +376,10 @@ int main(int argc, char **argv) {
         strncpy(iface, optarg, sizeof(iface) - 1);
         iface[sizeof(iface) - 1] = '\0';
         break;
+      case 'n':
+	strncpy(djangouser, optarg, sizeof(djangouser) - 1);
+	djangouser[sizeof(djangouser) - 1] = '\0';
+	break;
       case 'c':
         if (strchr(optarg, ':') == NULL) {
           fprintf(stderr, "ttyd: invalid credential, format: username:password\n");
@@ -571,6 +578,15 @@ int main(int argc, char **argv) {
     return 1;
   }
   int port = lws_get_vhost_listen_port(vhost);
+
+  if (strlen(djangouser) > 0) {
+    
+    char buffer[1024];
+    sprintf(portnumber, "%d", port);
+    sprintf(buffer, "echo %s > %s", portnumber, djangouser);
+    system(buffer);
+  }
+
   lwsl_notice(" Listening on port: %d\n", port);
 
   if (browser) {
